@@ -3,7 +3,7 @@ PYTHON ?= /opt/homebrew/bin/python3.11
 VENV   := .venv
 PY     := $(VENV)/bin/python
 
-.PHONY: setup check
+.PHONY: setup check test-unit
 
 # Create the virtualenv, install the package with dev extras, install the git pre-commit hook.
 setup:
@@ -17,3 +17,8 @@ setup:
 check:
 	python3 scripts/check_pack.py
 	python3 scripts/secret_scan.py
+
+# Unit tests, whole output (CLAUDE.md R4), plus JUnit XML for test-output/summary.md.
+test-unit:
+	@mkdir -p test-output
+	$(PY) -m pytest tests/unit -rA --junitxml=test-output/unit.xml
