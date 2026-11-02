@@ -1,0 +1,7 @@
+#!/bin/sh
+# Installed by `make setup` (git config core.hooksPath scripts/git-hooks).
+# Blocks a commit that changes a pack file (CLAUDE.md R1) or carries a secret (R2).
+set -e
+ROOT="$(git rev-parse --show-toplevel)"
+python3 "$ROOT/scripts/check_pack.py" --staged
+python3 "$ROOT/scripts/secret_scan.py" --staged

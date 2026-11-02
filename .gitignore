@@ -16,3 +16,12 @@ __pycache__/
 *.pyc
 .venv/
 .pytest_cache/
+
+# Python environment and build output.
+.venv/
+*.egg-info/
+build/
+dist/
+
+# Local agent run folders (selected runs are copied to transcripts/ for submission).
+runs/
