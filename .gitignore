@@ -1,0 +1,18 @@
+# Secrets: credential values come separately and are never committed.
+.env
+.env.*
+!.env.example
+
+# Proxy fault log written during development.
+proxy/logs/
+
+# Decision: the assignment brief stays out of this public repository.
+# It is Lever's document; the repo only needs the pack's runnable files.
+ASSIGNMENT.pdf
+
+# Local tooling noise.
+.DS_Store
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/

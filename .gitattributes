@@ -1,0 +1,4 @@
+# Decision: inventory.csv is stored exactly as delivered (CRLF line endings).
+# Without this, a global core.autocrlf=input rewrites it to LF on commit, and
+# Agent B would be tested against a file the reviewers never sent.
+inventory.csv -text
