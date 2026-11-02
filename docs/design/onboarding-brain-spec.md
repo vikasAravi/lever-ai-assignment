@@ -42,7 +42,7 @@ GLPI 11.0.12        the product (pinned, never modified)
 | V3 | A read by id applies the same rule, plus the right to read that record type. | `CommonDBTM::can`, `canViewItem`, `checkEntity(true)`; `Session::haveAccessToEntity` |
 | V4 | **Writes are stricter:** the record's entity must be *in* the active set. A shared record from an ancestor is visible but not editable. | `CommonDBTM::checkEntity()` without recursion |
 | V5 | `changeActiveEntities(id, recursive)` sets the active set to `id`, plus all descendants if recursive. The ancestors list is a snapshot. | `Session::changeActiveEntities` |
-| V6 | At login a user starts on their default entity if they hold a profile there, with that assignment's recursive flag. Expected: onboarding.bot → Root + all; inventory.bot → Engineering. *API path to confirm live.* | `Session::init`, `Session::changeProfile` |
+| V6 | At login a user starts on their default entity if they hold a profile there, with that assignment's recursive flag. Expected: onboarding.bot → Root + all; inventory.bot → Engineering. The API's token login goes through the same path (`API::initSession` → `Auth::login` → `Session::init`); the resulting scope is still to be observed live. | `Session::init`, `Session::changeProfile`; `Auth.php::login` (~1212) |
 | V7 | Text search "contains" is a substring match (`LIKE '%x%'`); `^` and `$` anchor it. The value is trimmed and `_` is escaped. | `SQLProvider::makeTextSearchValue` (~5592) |
 | V8 | Tables use `utf8mb4_unicode_ci`, so name comparisons ignore case. | seed `CREATE TABLE` statements |
 | V9 | The **user** list is scoped through profile assignments (`glpi_profiles_users`), and is **not filtered at all** when the session can see every entity. | `SQLProvider` (~733-737) |
@@ -344,8 +344,8 @@ A second run on the same input and state: 0 created, 40 matched, 14 skipped, and
 
 ## 6. To verify live (before the YAML is published)
 
-- V6: the API session's starting entity and recursion for each bot.
-- The legacy API's scope checks on read-by-id and lists, and the exact error codes for out-of-scope records.
+- V6: the API session's starting entity and recursion for each bot (source path confirmed; see `api-and-faults-spec.md` A1).
+- The legacy API's scope checks on read-by-id and lists: read in source (`api-and-faults-spec.md` A8-A12), still to observe live.
 - E5: entity create refused for onboarding.bot with `400 ERROR_GLPI_ADD`.
 - F4: the silent fallback to Self-Service.
 - F7: the API enforcing grantable profiles on a direct assignment.
