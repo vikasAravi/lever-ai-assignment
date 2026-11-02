@@ -65,6 +65,7 @@ Write tools run the full check → act → read back cycle server-side and retur
 | `ensure_user(login, first, last, email, entity, profile, shared)` | `find_users(entity, login?)` | creates the user **and** its profile assignment, then reads back the exact assignment (catches F4) |
 | `ensure_supplier(entity, name, type?, phone?)` | `find_suppliers(entity, name?)` | a match in the trash → approval (S2) |
 | `ensure_category(entity, path)` | `find_categories(entity, path?)` | tree; warns when sharing is left at GLPI's default (C4) |
+| `apply_approved_change(diff_id)` | the `find_*` of the record it changes | the server reads the approvals file from its session config, re-derives the diff id, applies only that diff and reads back ([`agent-a-spec.md`](agent-a-spec.md) A3.5) |
 
 ### 2.3 Inventory role (Agent B)
 
@@ -80,7 +81,7 @@ Write tools run the full check → act → read back cycle server-side and retur
 1. **No delete tools for agents.** Agents never delete. The live tests' delete step uses a test-only cleanup client (§6).
 2. **No entity write tools** (both roles are read-only on entities).
 3. **No generic "call any endpoint" tool**; it would make every guard optional.
-4. **`apply_approved_change(diff_id)` is deferred** until the approvals-file design (P-APPROVAL) is settled.
+4. **No tool takes an approval's content from the agent.** `apply_approved_change` takes only a diff id; the approval itself comes from the file the server was configured with.
 
 ### 2.5 Open: the inventory role can't read states or locations
 
@@ -139,7 +140,7 @@ Examples:
 | bad input | `out_of_scope`, `entity_not_found`, `missing_required`, `invalid_value`, `parent_not_found`, `parent_cycle`, `duplicate_row` |
 | decision | `conflict`, `ambiguous_parent`, `duplicate_in_glpi`, `trashed_match`, `precondition_failed` |
 | blocked | `entity_not_creatable`, `profile_not_grantable`, `right_missing`, `parent_not_created`, `internal_error` |
-| unknown | `write_unknown`, `parent_unknown`, `read_unconfirmed`, `exists_unexpectedly`, `budget_exhausted` |
+| unknown | `write_unknown`, `parent_unknown`, `read_unconfirmed`, `exists_unexpectedly`, `readback_mismatch` (the readback differs from what was written, e.g. F4), `conformance` (the agent runtime rejected a call twice for not matching its plan step), `budget_exhausted` |
 
 ---
 
@@ -159,9 +160,10 @@ Examples:
 | `ensure_user` / `find_users` | ✓ | `find_users` only |
 | `ensure_supplier` / `find_suppliers` | ✓ | – |
 | `ensure_category` / `find_categories` | ✓ | – |
+| `apply_approved_change` | ✓ | – |
 | `find_computers`, `update_computer`, `set_computer_state` | – | ✓ |
 | `open_discrepancy_ticket` / `find_discrepancy_tickets` | – | ✓ |
-| **Total** | **13** | **9** |
+| **Total** | **14** | **9** |
 
 Narrower than GLPI on purpose: inventory.bot holds full user rights in GLPI but only gets `find_users`; onboarding.bot holds full computer and ticket rights but gets no computer or ticket tools.
 
@@ -210,9 +212,9 @@ Narrower than GLPI on purpose: inventory.bot holds full user rights in GLPI but 
 
 | Layer | What | Count |
 |---|---|---|
-| 1. Unit | Per tool, against a fake GLPI that mimics the legacy quirks (search object, `200 false` scope failure, error arrays, raw SQL on duplicates). Happy path, **every refusal code the tool can return**, and the fault paths: 502 → retry; 504 → unknown then check; bare `[]` → re-login and re-scope; `200 false` → refuse. Plus the brain loader, envelope, secret masking and path translation (`Root` ↔ `Root entity`). | 18 unique tools |
-| 2. Live | Per write tool, against the real proxy, sequential, one pytest process: create a `t-<run id>-` record → read back with the `find_*` twin in a **fresh session scoped to the entity** → **purge** via the test-only cleanup client → confirm gone. Computers: change a field, read back, restore, read back. Tickets: create, read back, purge via onboarding.bot (inventory.bot can't delete tickets). Cleanup in `finally`. Each run records the faults the proxy injected (dev log). | 8 write tools |
-| 3. Registration | Per role: exact tool list (13 / 9); the other role's tools fail as unknown; three broken-map variants refuse start-up. | 2 roles |
+| 1. Unit | Per tool, against a fake GLPI that mimics the legacy quirks (search object, `200 false` scope failure, error arrays, raw SQL on duplicates). Happy path, **every refusal code the tool can return**, and the fault paths: 502 → retry; 504 → unknown then check; bare `[]` → re-login and re-scope; `200 false` → refuse. Plus the brain loader, envelope, secret masking and path translation (`Root` ↔ `Root entity`). | 19 unique tools |
+| 2. Live | Per write tool, against the real proxy, sequential, one pytest process: create a `t-<run id>-` record → read back with the `find_*` twin in a **fresh session scoped to the entity** → **purge** via the test-only cleanup client → confirm gone. Computers: change a field, read back, restore, read back. Tickets: create, read back, purge via onboarding.bot (inventory.bot can't delete tickets). `apply_approved_change`: apply a test approval, read back, restore. Cleanup in `finally`. Each run records the faults the proxy injected (dev log). | 9 write tools |
+| 3. Registration | Per role: exact tool list (14 / 9); the other role's tools fail as unknown; three broken-map variants refuse start-up. | 2 roles |
 | 4. Recorded agent turn | One real model turn of Agent A against the live onboarding server (e.g. "set up Floor 5 Lab in Engineering"); model messages and every MCP request/response saved, redacted, to `transcripts/`. Uses the candidate's own model key. | 1 |
 | 5. Output | `make test` runs every layer; each writes its full pytest output (never cut with `| tail`) and a JUnit XML file; a script builds `test-output/summary.md` with executed / passed / failed / skipped per layer and the names of failing tests. | – |
 
@@ -223,5 +225,6 @@ Narrower than GLPI on purpose: inventory.bot holds full user rights in GLPI but 
 ## 7. Open items
 
 1. Inventory role and dropdowns (§2.5): check live.
-2. `apply_approved_change` (§2.4): after the approvals-file design.
-3. The per-tool call budget's exact number: set once real latencies are measured.
+2. The per-tool call budget's exact number: set once real latencies are measured.
+
+Resolved since v0.1 was first written: `apply_approved_change` is designed in [`agent-a-spec.md`](agent-a-spec.md) A3.5 and added to the onboarding role (14 tools).

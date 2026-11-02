@@ -336,11 +336,13 @@ A second run on the same input and state: 0 created, 40 matched, 14 skipped, and
 
 ---
 
-## 5. Open decisions
+## 5. Decisions resolved in the Agent A spec
 
-1. Default-entity preference (`glpi_users.entities_id`) for new users: set it to the workbook entity or leave it unset.
-2. User creation: one call (F3) vs user first, then a separate assignment (F7). F4 argues for the second, or for a mandatory assignment readback.
-3. Where the approvals file lives: committed to the repo, or passed as a run argument.
+The three decisions left open in v0.1 are settled in [`agent-a-spec.md`](agent-a-spec.md):
+
+1. Default-entity preference (`glpi_users.entities_id`): **left unset** (A3.1).
+2. User creation: **one call** with explicit `_profiles_id`, `_entities_id`, `_is_recursive` and `_useremails`, plus a mandatory assignment readback (A3.2). The two-step path would create an unwanted Self-Service assignment at the session entity, because a user created without a profile gets the default profile (`User::post_addItem`).
+3. Approvals file: **committed** as `approvals/onboarding.yaml`, its path passed by the runner's settings, applied by the server through `apply_approved_change` (A3.4, A3.5).
 
 ## 6. To verify live (before the YAML is published)
 
