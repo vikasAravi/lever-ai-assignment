@@ -22,5 +22,5 @@ Rules:
 1. The command must run as written in a fresh checkout of the branch. No "run the tests".
 2. The pass criterion is numeric where possible.
 3. An interface change (anything under `src/glpi_agents/contracts/`) goes to the lead first; never change a shared contract on your own branch.
-4. Append a copy of every handoff to the `Messages` section of `WORKLOG.md` on your branch, with the time.
+4. Send every handoff to the lead (the session that started you). The lead copies it verbatim into the `Messages` section of `WORKLOG.md`. Area branches never edit `WORKLOG.md` or the `Makefile` (lead-owned; four branches editing them would conflict): put any Makefile line you need in the handoff instead.
 5. A receiver who can't reproduce the pass criterion replies with what they ran and what they saw, and the work isn't merged (R8).
