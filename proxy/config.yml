@@ -1,0 +1,24 @@
+# Fault proxy configuration. proxy.py reads this file once at startup
+# (restart the proxy container after a change).
+#
+# Candidates: do not modify, bypass or disable the proxy. Your submission is
+# run with a different seed and with logging off; the fault schedule you see
+# during development is not the one you are graded on.
+
+# Seed for the fault schedule. The same seed and the same sequence of API calls
+# always produce the same faults. Keep it quoted so YAML reads it as a string.
+seed: "candidate-2026"
+
+# Append one line per injected fault to log_path (format in README.md).
+# The proxy serves on even when the file cannot be written (it logs to stderr).
+log_faults: true
+log_path: "/app/logs/faults.log"
+
+faults:
+  delay_rate: 0.10            # share of API calls delayed
+  delay_rate_lists: 0.35      # share of API list reads delayed (GET to /search/... or a collection GET with no numeric id)
+  delay_ms_min: 1500          # a delayed call sleeps a uniform number of milliseconds in [delay_ms_min, delay_ms_max]
+  delay_ms_max: 6000
+  error_502_rate: 0.04        # answered 502 without being forwarded
+  drop_write_rate: 0.06       # writes forwarded and committed upstream, response discarded, client gets 504
+  session_expiry_every_n_calls: 120   # after every N API calls, the oldest live session token is expired

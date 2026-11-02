@@ -1,0 +1,115 @@
+# Founding Engineer assignment pack: GLPI behind the fault proxy.
+#
+#   cp .env.example .env      # then fill in the values you were sent
+#   docker compose up -d --build
+#   open http://localhost:8080          UI  (login: the UI admin account from .env)
+#        http://localhost:8080/apirest.php   legacy REST API
+#        http://localhost:8080/api.php       high-level API
+#
+# GLPI's own port is deliberately not published. Everything goes through the proxy.
+# Do not modify, bypass or disable the proxy. Do not change the GLPI image tag.
+name: assignment-pack
+services:
+  db:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: glpi
+      MARIADB_USER: glpi
+      MARIADB_PASSWORD: ${GLPI_DB_PASSWORD:?set GLPI_DB_PASSWORD in .env}
+      MARIADB_RANDOM_ROOT_PASSWORD: "yes"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./seed:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  # One-shot: writes GLPI's database config file and the instance encryption key into
+  # the shared volume. The GLPI
+  # image decides "installed or not" by the presence of that file plus a schema
+  # check; with a pre-seeded database and a fresh volume it would otherwise try to
+  # install over the seed and stop. Idempotent (--reconfigure).
+  glpi-configure:
+    image: glpi/glpi:11.0.12
+    restart: "no"
+    environment:
+      GLPI_DB_HOST: db
+      GLPI_DB_PORT: 3306
+      GLPI_DB_NAME: glpi
+      GLPI_DB_USER: glpi
+      GLPI_DB_PASSWORD: ${GLPI_DB_PASSWORD}
+      GLPI_SKIP_AUTOINSTALL: "true"
+      GLPI_SKIP_AUTOUPDATE: "true"
+    volumes:
+      - glpi_data:/var/glpi
+      - ./init/glpi_set_tokens.php:/init/glpi_set_tokens.php:ro
+    command: ["sh", "-c", "php bin/console database:configure --db-host=db --db-port=3306 --db-name=glpi --db-user=glpi --db-password=\"$$GLPI_DB_PASSWORD\" --reconfigure --no-interaction && KEY_ONLY=1 php /init/glpi_set_tokens.php && echo 'assignment-pack: database configured'"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  glpi:
+    image: glpi/glpi:11.0.12
+    environment:
+      GLPI_DB_HOST: db
+      GLPI_DB_PORT: 3306
+      GLPI_DB_NAME: glpi
+      GLPI_DB_USER: glpi
+      GLPI_DB_PASSWORD: ${GLPI_DB_PASSWORD}
+    volumes:
+      - glpi_data:/var/glpi
+    depends_on:
+      db:
+        condition: service_healthy
+      glpi-configure:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost/"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+    # no ports on purpose
+
+  # One-shot: writes the API tokens from .env into GLPI, encrypted with this
+  # instance's own key (GLPI stores tokens encrypted at rest, so the seed dump
+  # cannot carry them). Safe to run at every `up`; it is idempotent.
+  glpi-init:
+    image: glpi/glpi:11.0.12
+    restart: "no"
+    environment:
+      GLPI_DB_HOST: db
+      GLPI_DB_PORT: 3306
+      GLPI_DB_NAME: glpi
+      GLPI_DB_USER: glpi
+      GLPI_DB_PASSWORD: ${GLPI_DB_PASSWORD}
+      GLPI_SKIP_AUTOINSTALL: "true"
+      GLPI_SKIP_AUTOUPDATE: "true"
+      GLPI_APP_TOKEN: ${GLPI_APP_TOKEN:?set GLPI_APP_TOKEN in .env}
+      GLPI_API_TOKEN_ONBOARDING: ${GLPI_API_TOKEN_ONBOARDING:?set GLPI_API_TOKEN_ONBOARDING in .env}
+      GLPI_API_TOKEN_INVENTORY: ${GLPI_API_TOKEN_INVENTORY:?set GLPI_API_TOKEN_INVENTORY in .env}
+    volumes:
+      - glpi_data:/var/glpi
+      - ./init/glpi_set_tokens.php:/init/glpi_set_tokens.php:ro
+    command: ["php", "/init/glpi_set_tokens.php"]
+    depends_on:
+      glpi:
+        condition: service_healthy
+
+  proxy:
+    build: ./proxy
+    environment:
+      UPSTREAM: http://glpi:80
+    volumes:
+      - ./proxy/config.yml:/app/config.yml:ro
+      - ./proxy/logs:/app/logs
+    ports:
+      - "${PROXY_PORT:-8080}:8080"
+    depends_on:
+      glpi:
+        condition: service_healthy
+
+volumes:
+  db_data:
+  glpi_data:

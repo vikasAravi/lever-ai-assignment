@@ -1,0 +1,37 @@
+# Entity: Root > Acme > India > Engineering
+# Field-team state vocabulary: Certified, In use, In repair, Missing. Blank means the team did not record it.
+Serial*,Asset name,Location,User,State*,Notes
+5CG2307X13,ENG-LT-001,Floor 3 Lab,nisha.menon,Certified,
+5CG2314X26,ENG-LT-002,Floor 4 Lab,rahul.bose,Certified,
+5CG2321X39,ENG-LT-003,Floor 3 Lab,tanvi.shah,Certified,
+5CG2328X52,ENG-LT-004,Floor 4 Lab,siddharth.jain,Certified,
+5CG2335X65,ENG-LT-005,Floor 3 Lab,,Certified,
+5CG2342X78,ENG-LT-006,Floor 4 Lab,aman.gupta,Certified,
+5CG2349X91,ENG-LT-007,Floor 3 Lab,divya.krishnan,Certified,
+5CG2356X07,ENG-LT-008,Floor 4 Lab,varun.nambiar,Certified,
+5CG2363X20,ENG-LT-009,Floor 4 Lab,lakshmi.sundaram,Certified,
+5CG2391X72,ENG-LT-013,Floor 4 Lab,rahul.bose,Certified,
+5CG2405X01,ENG-LT-015,Floor 4 Lab,,Certified,
+5CG2419X27,ENG-LT-017,Floor 4 Lab,aman.gupta,Certified,
+5CG2433X53,ENG-LT-019,Floor 4 Lab,varun.nambiar,Certified,
+5CG2447X79,ENG-LT-021,Floor 4 Lab,farhan.ali,Certified,
+5CG2314X26,ENG-LT-002,Floor 4 Lab,farhan.ali,In use,
+5CG2328X52,ENG-LT-004,Floor 4 Lab,lakshmi.sundaram,In use,
+5CG2342X78,ENG-LT-006,Floor 4 Lab,varun.nambiar,Certified,
+5CG2356X07,ENG-LT-008,Floor 4 Lab,,In use,found unassigned on the shelf
+5CG2461X08,ENG-LT-023-OLD,Floor 3 Lab,nisha.menon,In use,
+5CG2468X21,ENG LT 024,Floor 4 Lab,rahul.bose,Certified,
+SN10,ENG-LT-010,Floor 4 Lab,,Certified,relabelled
+5CG2475X34,ENG-LT-025,Floor 3 Lab,,,label unreadable
+5CG2531X41,ENG-LT-033,Floor 4 Lab,aditya.kulkarni,In use,was showing a Berlin location
+5CG2545X67,ENG-LT-035,Berlin Office,,In use,label says Berlin?
+9ZZ7781QQQ,ENG-LT-NEW-1,Floor 3 Lab,,In use,no asset record found
+9ZZ7782QQQ,,Floor 4 Lab,kiran.naidu,Certified,arrived last week
+5CG2482X47,ENG-LT-026,Floor 4 Lab,siddharth.jain,In use,
+5CG2489X60,ENG-LT-027,Floor 3 Lab,pooja.reddy,In use,
+5CG2496X73,ENG-LT-028,Floor 4 Lab,aman.gupta,In use,
+5CG2503X86,ENG-LT-029,Floor 3 Lab,divya.krishnan,In use,
+5CG2510X02,ENG-LT-030,Floor 4 Lab,,In use,
+5CG2552X80,ENG-LT-036,Floor 4 Lab,tanvi.shah,In use,
+5CG2559X93,ENG-LT-037,Floor 3 Lab,siddharth.jain,In repair,
+5CG2566X09,ENG-LT-038,Floor 4 Lab,pooja.reddy,Missing,not found on either floor
